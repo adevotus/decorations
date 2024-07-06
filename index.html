@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <title>Adeweb items </title>
+    <style>
+        *, *::after, *::before {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            outline: none;
+            font-family: monospace;
+        }
+        body {
+            overflow: hidden;
+            /*background-color: #fcdeb9;*/
+             background-color: #5e5d5d;
+            cursor: grab;
+        }
+        .webgl {
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+    </style>
+</head>
+<body>
+<canvas class="webgl"></canvas>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.  js/r124/three.min.js"></script>
+<script src="https://unpkg.com/three@0.126.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://unpkg.com/three@0.126.0/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+    const canvas = document.querySelector('.webgl');
+    const scene = new THREE.Scene();
+    const textureLoader = new THREE.TextureLoader();
+    const sizes = {
+        width: window.innerWidth,
+        height: window.innerHeight
+    };
+
+    // Base camera
+    const camera = new THREE.PerspectiveCamera(10, sizes.width / sizes.height, 0.1, 500);
+    camera.position.x = 60;
+    camera.position.y = 35;
+    camera.position.z = 80;
+    scene.add(camera);
+
+    // Controls
+    const controls = new THREE.OrbitControls(camera, canvas);
+    controls.enableDamping = true;
+    controls.enableZoom = true;
+    controls.enablePan = true;
+    controls.minPolarAngle = Math.PI / 5;
+    controls.maxPolarAngle = Math.PI / 2;
+
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        antialias: true,
+        alpha: true
+    });
+
+    renderer.setSize(sizes.width, sizes.height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputEncoding = THREE.sRGBEncoding;
+
+    // Materials
+    const bakedTexture = textureLoader.load('https://rawcdn.githack.com/ricardoolivaalonso/ThreeJS-Room15/9d7db1ccdb3f5af8eae99fe8cb25228459bae93d/dist/baked.jpg');
+    bakedTexture.flipY = false;
+    bakedTexture.encoding = THREE.sRGBEncoding;
+
+    const bakedMaterial = new THREE.MeshBasicMaterial({
+        map: bakedTexture,
+        side: THREE.DoubleSide
+    });
+
+    bakedMaterial.userData.outlineParameters = {
+        thickness: 0.0025,
+        color: [0, 0, 0],
+        alpha: 1,
+        keepAlive: true,
+        visible: true
+    };
+
+    // Loader
+    const loader = new THREE.GLTFLoader();
+    loader.load('https://rawcdn.githack.com/ricardoolivaalonso/ThreeJS-Room15/9d7db1ccdb3f5af8eae99fe8cb25228459bae93d/dist/model.glb',
+        (gltf) => {
+            const model = gltf.scene;
+            model.traverse(child => {
+                if (child.isMesh) {
+                    child.material = bakedMaterial;
+                }
+            });
+            scene.add(model);
+        },
+        (xhr) => {
+            console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+        },
+        (error) => {
+            console.error('Error loading GLTF model:', error);
+        }
+    );
+
+    // Animation
+    const minPan = new THREE.Vector3(-5, -2, -5);
+    const maxPan = new THREE.Vector3(5, 2, 5);
+
+    const tick = () => {
+        controls.update();
+        controls.target.clamp(minPan, maxPan);
+        renderer.render(scene, camera);
+        window.requestAnimationFrame(tick);
+    };
+
+    tick();
+
+    window.addEventListener('resize', () => {
+        sizes.width = window.innerWidth;
+        sizes.height = window.innerHeight;
+        camera.aspect = sizes.width / sizes.height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(sizes.width, sizes.height);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    });
+
+</script>
+</body>
+</html>
